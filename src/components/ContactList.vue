@@ -33,28 +33,32 @@
 </template>
 
 <script>
-import eventBus from '../EventBus';
+import Constant from '../constant';
+import { mapState } from 'vuex';
+
 export default {
     name : 'contactList',
-    props : [ 'contactlist' ],
+    // props를 통해서 데이터를 전달받는 것이 아니라 Vuex의 상태 데이터를 계산형 속성으로 바인딩한다.
+    computed : mapState([ 'contactlist' ]),
+    // 컴포넌트 UI에서 이벤트가 발생할 때 저장소의 액션을 호출
     methods : {
-        // '새 연락처 추가' 버튼을 클릭했을 때 입력폼을 나타내기 위한 이벤트 전달
+        // '새 연락처 추가' 버튼을 클릭했을 때 입력폼을 나타내기 위해 저장소의 액션 호출
         addContact : function() {
-            eventBus.$emit("addContactForm");
+          this.$store.dispatch(Constant.ADD_CONTACT_FORM);
         },
-        // 편집 버튼을 누른 연락처의 no 필드값을 인자로 전달하여 수정 폼을 나타내기 위한 이벤트 전달
+        // 편집 버튼을 누른 연락처의 no 필드값을 인자로 전달하여 수정 폼을 나타내기 위해 저장소의 액션 호출
         editContact : function(no) {
-            eventBus.$emit("editContactForm", no)
+          this.$store.dispatch(Constant.EDIT_CONTACT_FORM, {no:no});
         },
-        // 삭제 버튼 클릭시 no 필드값을 인자로 삭제를 실행하기 위한 이벤트 전달
+        // 삭제 버튼 클릭시 no 필드값을 인자로 삭제를 실행하기 위해 저장소의 액션 호출
         deleteContact : function(no) {
-            if (confirm("정말로 삭제하시겠습니까?") == true) {
-                eventBus.$emit('deleteContact', no);
-            }
+          if (confirm("정말로 삭제하시겠습니까?") == true) {
+            this.$store.dispatch(Constant.DELETE_CONTACT, {no:no});
+          }
         },
-        // 사진을 클릭했을 때 no 필드값을 전달하여 사진 변경 폼을 나타내기 위한 이벤트 전달
+        // 사진을 클릭했을 때 no 필드값을 전달하여 사진 변경 폼을 나타내기 위해 저장소의 액션 호출
         editPhoto : function(no) {
-            eventBus.$emit("editPhoto", no);
+          this.$store.dispatch(Constant.EDIT_PHOTO_FORM, {no:no});
         }
     }
 }
