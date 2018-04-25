@@ -1,8 +1,8 @@
 <template>
     <div>
     <p class="addnew">
-        <button class="btn btn-primary" @click="addContact()">
-            새로운 연락처 추가하기</button>
+        <router-link class="btn btn-primary" :to="{ name: 'addcontact' }">
+          새로운 연락처 추가하기</router-link>
     </p>
     <div id="example">
     <table id="list" class="table table-striped table-bordered table-hover">
@@ -29,36 +29,73 @@
         </tbody>
     </table>
     </div>
+    <paginate ref="pagebuttons"
+        :page-count="totalpage"
+        :page-range="7"
+        :margin-pages="3"
+        :click-handler="pageChanged"
+        :prev-text="'이전'"
+        :next-text="'다음'"
+        :container-class="'pagination'"
+        :page-class="'page-item'">
+    </paginate>
+    <router-view></router-view>
     </div>
 </template>
 
 <script>
 import Constant from '../constant';
 import { mapState } from 'vuex';
+import Paginate from 'vuejs-paginate';
+import _ from 'lodash';
 
 export default {
     name : 'contactList',
+    components : { Paginate },
     // props를 통해서 데이터를 전달받는 것이 아니라 Vuex의 상태 데이터를 계산형 속성으로 바인딩한다.
-    computed : mapState([ 'contactlist' ]),
+    computed : _.extend(
+        {
+            totalpage : function() {
+                var totalcount = this.contactlist.totalcount;
+                var pagesize = this.contactlist.pagesize;
+                return Math.floor((totalcount - 1) / pagesize) + 1;
+            }
+        },
+        mapState([ 'contactlist' ])
+    ),
+    mounted : function() {
+        var page = 1;
+        if (this.$route.query && this.$route.query.page) {
+            page = parseInt(this.$route.query.page);
+        }
+        this.$store.dispatch(Constant.FETCH_CONTACTS, { pageno:page });
+        this.$refs.pagebuttons.selected = page-1;
+    },
+    watch : {
+        '$route' : function(to, from) {
+            if (to.query.page && to.query.page != this.contactlist.pageno) {
+                var page = to.query.page;
+                this.$store.dispatch(Constant.FETCH_CONTACTS, { pageno:page });
+                this.$refs.pagebuttons.selected = page-1;
+            }
+        }
+    },
     // 컴포넌트 UI에서 이벤트가 발생할 때 저장소의 액션을 호출
     methods : {
-        // '새 연락처 추가' 버튼을 클릭했을 때 입력폼을 나타내기 위해 저장소의 액션 호출
-        addContact : function() {
-          this.$store.dispatch(Constant.ADD_CONTACT_FORM);
+        pageChanged : function(page) {
+            this.$router.push({ name: 'contacts', query: { page: page }})
         },
-        // 편집 버튼을 누른 연락처의 no 필드값을 인자로 전달하여 수정 폼을 나타내기 위해 저장소의 액션 호출
         editContact : function(no) {
-          this.$store.dispatch(Constant.EDIT_CONTACT_FORM, {no:no});
+            this.$router.push({ name: 'updatecontact', params : { no:no } })
         },
-        // 삭제 버튼 클릭시 no 필드값을 인자로 삭제를 실행하기 위해 저장소의 액션 호출
         deleteContact : function(no) {
-          if (confirm("정말로 삭제하시겠습니까?") == true) {
-            this.$store.dispatch(Constant.DELETE_CONTACT, {no:no});
-          }
+            if (confirm("정말로 삭제하시겠습니까?") == true) {
+                this.$store.dispatch(Constant.DELETE_CONTACT, {no:no});
+                this.$router.push({ name: 'contacts' })
+            }
         },
-        // 사진을 클릭했을 때 no 필드값을 전달하여 사진 변경 폼을 나타내기 위해 저장소의 액션 호출
         editPhoto : function(no) {
-          this.$store.dispatch(Constant.EDIT_PHOTO_FORM, {no:no});
+            this.$router.push({ name: 'updatephoto', params: { no: no } })
         }
     }
 }
